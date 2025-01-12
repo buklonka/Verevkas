@@ -6,33 +6,51 @@ using UnityEngine.SceneManagement;
 public class WinTextController : MonoBehaviour
 {
     [Header("UI Elements")]
-    public TextMeshProUGUI winText; // Текст победы
-    public TextMeshProUGUI scoreText; // Текст очков
+    [SerializeField] private TextMeshProUGUI winText;
+    [SerializeField] private TextMeshProUGUI scoreText;
 
     [Header("Particle System")]
-    public ParticleSystem starEffect; // Эффект звёздочек
+    [SerializeField] private ParticleSystem starEffect;
 
     [Header("Animation Settings")]
-    public float fadeDuration = 2f; // Длительность появления текста
-    public float starEffectDelay = 1.5f; // Задержка перед запуском звёздочек
-    public float scoreIncreaseDuration = 1.5f; // Длительность анимации увеличения очков
+    [SerializeField] private float fadeDuration = 2f;
+    [SerializeField] private float starEffectDelay = 1.5f;
+    [SerializeField] private float scoreIncreaseDuration = 1.5f;
 
     [Header("Score Settings")]
-    public int winScore = 350; // Количество очков за победу
+    [SerializeField] private int winScore = 350;
 
-    private bool isWinActive = false; // Флаг, указывающий, активна ли победа
-    private int currentScore = 0; // Текущее количество очков
+    private bool isWinActive = false;
+    private int currentScore = 0;
 
     void Start()
     {
-        // Загружаем сохранённые очки (если они есть)
+        LoadScore();
+        InitializeUI();
+        SubscribeToEvents();
+    }
+
+    void OnDestroy()
+    {
+        UnsubscribeFromEvents();
+    }
+
+    private void OnApplicationQuit()
+    {
+        ClearSavedScore();
+    }
+
+    private void LoadScore()
+    {
         if (PlayerPrefs.HasKey("CurrentScore"))
         {
             currentScore = PlayerPrefs.GetInt("CurrentScore");
             UpdateScoreText();
         }
+    }
 
-        // Выключаем текст и эффект звёздочек при старте
+    private void InitializeUI()
+    {
         if (winText != null)
             winText.gameObject.SetActive(false);
 
@@ -40,29 +58,27 @@ public class WinTextController : MonoBehaviour
         {
             starEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+    }
 
-        // Подписываемся на событие "все верёвки зелёные"
+    private void SubscribeToEvents()
+    {
         Svyaznoy.OnAllRopesGreen += OnWin;
     }
 
-    void OnDestroy()
+    private void UnsubscribeFromEvents()
     {
-        // Отписываемся от события при уничтожении объекта
         Svyaznoy.OnAllRopesGreen -= OnWin;
     }
 
-    // Метод, вызываемый при завершении игры
-    private void OnApplicationQuit()
+    private void ClearSavedScore()
     {
-        // Очищаем сохранённые очки
         PlayerPrefs.DeleteKey("CurrentScore");
         PlayerPrefs.Save();
     }
 
-    // Метод, вызываемый при победе
     private void OnWin()
     {
-        if (!isWinActive) // Если победа ещё не активна
+        if (!isWinActive)
         {
             isWinActive = true;
             ShowWinText();
@@ -70,7 +86,6 @@ public class WinTextController : MonoBehaviour
         }
     }
 
-    // Метод для показа текста и эффектов победы
     private void ShowWinText()
     {
         if (winText != null)
@@ -85,8 +100,7 @@ public class WinTextController : MonoBehaviour
         }
     }
 
-    // Корутина для плавного появления текста
-    IEnumerator FadeInText()
+    private IEnumerator FadeInText()
     {
         float elapsedTime = 0f;
         Color textColor = winText.color;
@@ -105,15 +119,13 @@ public class WinTextController : MonoBehaviour
         winText.color = textColor;
     }
 
-    // Корутина для задержки перед запуском звёздочек
-    IEnumerator PlayStarEffectWithDelay()
+    private IEnumerator PlayStarEffectWithDelay()
     {
         yield return new WaitForSeconds(starEffectDelay);
         starEffect.Play();
     }
 
-    // Корутина для анимации увеличения очков
-    IEnumerator IncreaseScoreAnimation(int startScore, int targetScore)
+    private IEnumerator IncreaseScoreAnimation(int startScore, int targetScore)
     {
         float elapsedTime = 0f;
 
@@ -130,7 +142,6 @@ public class WinTextController : MonoBehaviour
         UpdateScoreText();
     }
 
-    // Метод для обновления текста очков
     private void UpdateScoreText()
     {
         if (scoreText != null)
@@ -139,7 +150,6 @@ public class WinTextController : MonoBehaviour
         }
     }
 
-    // Метод для сброса всей сцены с сохранением очков
     public void ResetSceneWithScore()
     {
         PlayerPrefs.SetInt("CurrentScore", currentScore);
@@ -147,7 +157,6 @@ public class WinTextController : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    // Метод для проверки, активна ли победа
     public bool IsWinActive()
     {
         return isWinActive;

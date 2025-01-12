@@ -4,20 +4,20 @@ using System.Collections;
 public class Uzelok : MonoBehaviour
 {
     [Header("Highlight Settings")]
-    public GameObject highlight;
-    public float fadeDuration = 0.2f;
+    [SerializeField] private GameObject highlight;
+    [SerializeField] private float fadeDuration = 0.2f;
 
     [Header("Sound Settings")]
-    public AudioClip hoverSound;
-    public AudioClip dragSound;
+    [SerializeField] private AudioClip hoverSound;
+    [SerializeField] private AudioClip dragSound;
     private AudioSource audioSource;
 
     [Header("Work Area Settings")]
-    public float workAreaWidth = 5f;
-    public float workAreaHeight = 5f;
+    [SerializeField] private float workAreaWidth = 5f;
+    [SerializeField] private float workAreaHeight = 5f;
 
     [Header("Scale Settings")]
-    public float scaleMultiplier = 1.5f;
+    [SerializeField] private float scaleMultiplier = 1.5f;
 
     private SpriteRenderer highlightRenderer;
     private Color transparentColor = new Color(1, 1, 1, 0);
@@ -37,10 +37,42 @@ public class Uzelok : MonoBehaviour
 
     private WinTextController winController;
 
-    private bool isPlayingSound = false; // Флаг для отслеживания воспроизведения звука
-    private Vector3 lastPosition; // Последняя позиция объекта
+    private bool isPlayingSound = false;
+    private Vector3 lastPosition;
 
     void Start()
+    {
+        InitializeAudioSource();
+        InitializeHighlight();
+        InitializeCamera();
+        InitializeWinController();
+        InitializePositionAndScale();
+    }
+
+    void Update()
+    {
+        if (IsWinActive()) return;
+
+        UpdateHighlight();
+        HandleDragging();
+    }
+
+    void OnMouseEnter() { isMouseOver = true; }
+    void OnMouseExit() { isMouseOver = false; }
+
+    void OnMouseDown()
+    {
+        if (IsWinActive()) return;
+
+        StartDragging();
+    }
+
+    void OnMouseUp()
+    {
+        StopDragging();
+    }
+
+    private void InitializeAudioSource()
     {
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
@@ -48,12 +80,14 @@ public class Uzelok : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
         }
 
-        // Разблокировка аудио при первом клике (для WebGL)
         if (Application.platform == RuntimePlatform.WebGLPlayer)
         {
             StartCoroutine(EnableAudioAfterUserInteraction());
         }
+    }
 
+    private void InitializeHighlight()
+    {
         if (highlight != null)
         {
             highlightRenderer = highlight.GetComponent<SpriteRenderer>();
@@ -63,46 +97,48 @@ public class Uzelok : MonoBehaviour
                 highlight.SetActive(true);
             }
         }
+    }
 
+    private void InitializeCamera()
+    {
         mainCamera = Camera.main;
         if (mainCamera == null)
         {
-            Debug.LogError("Main camera not found!");
+            enabled = false;
             return;
-        }
-
-        winController = FindFirstObjectByType<WinTextController>();
-        if (winController == null)
-        {
-            Debug.LogError("WinTextController not found!");
         }
 
         CalculateWorkAreaBounds();
+    }
+
+    private void InitializeWinController()
+    {
+        winController = FindFirstObjectByType<WinTextController>();
+        if (winController == null)
+        {
+            enabled = false;
+        }
+    }
+
+    private void InitializePositionAndScale()
+    {
         initialZ = transform.position.z;
         originalScale = transform.localScale;
         initialPosition = transform.position;
-
-        lastPosition = transform.position; // Инициализация последней позиции
+        lastPosition = transform.position;
     }
 
-    void Update()
+    private void UpdateHighlight()
     {
-        if (winController != null && winController.IsWinActive())
-        {
-            if (isDragging)
-            {
-                isDragging = false;
-                transform.localScale = originalScale;
-            }
-            return;
-        }
-
         if (highlightRenderer != null)
         {
             float targetAlpha = (isMouseOver && !isDragging && !isClicking) ? 1f : 0f;
             highlightRenderer.color = Color.Lerp(highlightRenderer.color, new Color(1, 1, 1, targetAlpha), Time.deltaTime / fadeDuration);
         }
+    }
 
+    private void HandleDragging()
+    {
         if (isDragging)
         {
             Vector2 mousePosition2D = mainCamera.ScreenToWorldPoint(Input.mousePosition);
@@ -113,7 +149,6 @@ public class Uzelok : MonoBehaviour
 
             transform.position = new Vector3(mousePosition2D.x, mousePosition2D.y, initialZ);
 
-            // Проверка, движется ли объект
             if (Vector3.Distance(transform.position, lastPosition) > 0.01f)
             {
                 if (!isPlayingSound && dragSound != null && audioSource != null)
@@ -122,20 +157,12 @@ public class Uzelok : MonoBehaviour
                 }
             }
 
-            lastPosition = transform.position; // Обновление последней позиции
+            lastPosition = transform.position;
         }
     }
 
-    void OnMouseEnter() { isMouseOver = true; }
-    void OnMouseExit() { isMouseOver = false; }
-
-    void OnMouseDown()
+    private void StartDragging()
     {
-        if (winController != null && winController.IsWinActive())
-        {
-            return;
-        }
-
         isClicking = true;
         isDragging = true;
         offset = transform.position - mainCamera.ScreenToWorldPoint(Input.mousePosition);
@@ -149,17 +176,15 @@ public class Uzelok : MonoBehaviour
         transform.localScale = originalScale * scaleMultiplier;
     }
 
-    void OnMouseUp()
+    private void StopDragging()
     {
         isClicking = false;
         isDragging = false;
         transform.localScale = originalScale;
     }
 
-    void CalculateWorkAreaBounds()
+    private void CalculateWorkAreaBounds()
     {
-        if (mainCamera == null) return;
-
         Vector3 cameraCenter = mainCamera.transform.position;
         minBounds = new Vector2(cameraCenter.x - workAreaWidth / 2, cameraCenter.y - workAreaHeight / 2);
         maxBounds = new Vector2(cameraCenter.x + workAreaWidth / 2, cameraCenter.y + workAreaHeight / 2);
@@ -176,7 +201,6 @@ public class Uzelok : MonoBehaviour
         }
     }
 
-    // Метод для сброса узелка в начальное состояние
     public void ResetToInitialState()
     {
         transform.position = initialPosition;
@@ -186,25 +210,29 @@ public class Uzelok : MonoBehaviour
         isClicking = false;
     }
 
-    IEnumerator EnableAudioAfterUserInteraction()
+    private bool IsWinActive()
     {
-        yield return new WaitUntil(() => Input.anyKeyDown || Input.GetMouseButtonDown(0));
-        audioSource.PlayOneShot(hoverSound); // Воспроизведение тестового звука
+        return winController != null && winController.IsWinActive();
     }
 
-    IEnumerator PlayDragSoundWithCooldown()
+    private IEnumerator EnableAudioAfterUserInteraction()
     {
-        isPlayingSound = true; // Устанавливаем флаг, что звук воспроизводится
+        yield return new WaitUntil(() => Input.anyKeyDown || Input.GetMouseButtonDown(0));
+        audioSource.PlayOneShot(hoverSound);
+    }
+
+    private IEnumerator PlayDragSoundWithCooldown()
+    {
+        isPlayingSound = true;
 
         if (dragSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(dragSound);
         }
 
-        yield return new WaitForSeconds(dragSound.length); // Ждем окончания звука
+        yield return new WaitForSeconds(dragSound.length);
+        yield return new WaitForSeconds(2f);
 
-        yield return new WaitForSeconds(2f); // Задержка 2 секунды
-
-        isPlayingSound = false; // Сбрасываем флаг
+        isPlayingSound = false;
     }
 }

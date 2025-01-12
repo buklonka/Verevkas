@@ -4,26 +4,39 @@ public class ScaleBackground : MonoBehaviour
 {
     void Start()
     {
-        // Масштабируем фон
         ScaleBackgroundToScreen();
     }
 
-    // Метод для масштабирования фона
     private void ScaleBackgroundToScreen()
     {
         SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
+        if (spriteRenderer == null)
         {
-            // Получаем размеры экрана в мировых координатах
-            float screenHeight = Camera.main.orthographicSize * 2;
-            float screenWidth = screenHeight * Screen.width / Screen.height;
-
-            // Получаем размеры спрайта
-            float spriteWidth = spriteRenderer.sprite.bounds.size.x;
-            float spriteHeight = spriteRenderer.sprite.bounds.size.y;
-
-            // Масштабируем спрайт
-            transform.localScale = new Vector3(screenWidth / spriteWidth, screenHeight / spriteHeight, 1);
+            enabled = false;
+            return;
         }
+
+        Vector2 screenSize = CalculateScreenSize();
+        Vector2 spriteSize = GetSpriteSize(spriteRenderer);
+        ScaleSprite(screenSize, spriteSize);
+    }
+
+    private Vector2 CalculateScreenSize()
+    {
+        float screenHeight = Camera.main.orthographicSize * 2;
+        float screenWidth = screenHeight * Screen.width / Screen.height;
+        return new Vector2(screenWidth, screenHeight);
+    }
+
+    private Vector2 GetSpriteSize(SpriteRenderer spriteRenderer)
+    {
+        return spriteRenderer.sprite.bounds.size;
+    }
+
+    private void ScaleSprite(Vector2 screenSize, Vector2 spriteSize)
+    {
+        float scaleX = screenSize.x / spriteSize.x;
+        float scaleY = screenSize.y / spriteSize.y;
+        transform.localScale = new Vector3(scaleX, scaleY, 1);
     }
 }

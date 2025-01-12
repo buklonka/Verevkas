@@ -8,20 +8,33 @@ public class ResetButtonController : MonoBehaviour
 
     void Start()
     {
+        InitializeButton();
+        InitializeWinController();
+        AddResetListener();
+    }
+
+    private void InitializeButton()
+    {
         resetButton = GetComponent<Button>();
         if (resetButton == null)
         {
-            Debug.LogError("ResetButtonController: Кнопка не найдена!");
+            enabled = false;
             return;
         }
+    }
 
+    private void InitializeWinController()
+    {
         winController = FindFirstObjectByType<WinTextController>();
         if (winController == null)
         {
-            Debug.LogError("ResetButtonController: WinTextController не найден!");
+            enabled = false;
             return;
         }
+    }
 
+    private void AddResetListener()
+    {
         resetButton.onClick.AddListener(ResetScene);
     }
 

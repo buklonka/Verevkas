@@ -3,87 +3,116 @@ using UnityEngine;
 [RequireComponent(typeof(ParticleSystem))]
 public class StarParticleEffect : MonoBehaviour
 {
-    public Sprite[] starSprites; // Массив спрайтов звёздочек
-    public float sphereRadius = 5f; // Радиус сферы
-    public float rotationSpeed = 90f; // Скорость вращения частиц (градусов в секунду)
+    [Header("Sprites")]
+    [SerializeField] private Sprite[] starSprites;
+
+    [Header("Shape Settings")]
+    [SerializeField] private float sphereRadius = 5f;
+
+    [Header("Rotation Settings")]
+    [SerializeField] private float rotationSpeed = 90f;
 
     void Start()
     {
-        // Получаем компонент ParticleSystem
-        ParticleSystem particleSystem = GetComponent<ParticleSystem>();
+        ConfigureParticleSystem();
+        GetComponent<ParticleSystem>().Play(); // Используем встроенное свойство particleSystem
+    }
 
-        // Настраиваем текстуры частиц
-        if (starSprites != null && starSprites.Length > 0)
+    private void ConfigureParticleSystem()
+    {
+        ConfigureTextures();
+        ConfigureMainModule();
+        ConfigureEmission();
+        ConfigureShape();
+        ConfigureForces();
+        ConfigureColorOverLifetime();
+        ConfigureSizeOverLifetime();
+        ConfigureRotationOverLifetime();
+    }
+
+    private void ConfigureTextures()
+    {
+        if (starSprites == null || starSprites.Length == 0) return;
+
+        var textureSheetAnimation = GetComponent<ParticleSystem>().textureSheetAnimation;
+        textureSheetAnimation.enabled = true;
+
+        foreach (var sprite in starSprites)
         {
-            // Создаём текстуру для частиц
-            ParticleSystem.TextureSheetAnimationModule textureSheetAnimation = particleSystem.textureSheetAnimation;
-            textureSheetAnimation.enabled = true;
-
-            // Добавляем спрайты звёздочек в текстуру
-            for (int i = 0; i < starSprites.Length; i++)
-            {
-                textureSheetAnimation.AddSprite(starSprites[i]);
-            }
-
-            // Настраиваем случайный выбор спрайтов
-            textureSheetAnimation.mode = ParticleSystemAnimationMode.Sprites;
-            textureSheetAnimation.frameOverTime = new ParticleSystem.MinMaxCurve(0, starSprites.Length - 1);
+            textureSheetAnimation.AddSprite(sprite);
         }
 
-        // Настраиваем параметры ParticleSystem
-        ParticleSystem.MainModule mainModule = particleSystem.main;
-        mainModule.startSpeed = 5f; // Скорость частиц
-        mainModule.startLifetime = 2f; // Время жизни частиц
-        mainModule.startSize = 0.5f; // Начальный размер частиц
-        mainModule.maxParticles = 100; // Максимальное количество частиц
+        textureSheetAnimation.mode = ParticleSystemAnimationMode.Sprites;
+        textureSheetAnimation.frameOverTime = new ParticleSystem.MinMaxCurve(0, starSprites.Length - 1);
+    }
 
-        // Настраиваем эмиссию (количество частиц в секунду)
-        ParticleSystem.EmissionModule emissionModule = particleSystem.emission;
+    private void ConfigureMainModule()
+    {
+        var mainModule = GetComponent<ParticleSystem>().main;
+        mainModule.startSpeed = 5f;
+        mainModule.startLifetime = 2f;
+        mainModule.startSize = 0.5f;
+        mainModule.maxParticles = 100;
+    }
+
+    private void ConfigureEmission()
+    {
+        var emissionModule = GetComponent<ParticleSystem>().emission;
         emissionModule.rateOverTime = 20;
+    }
 
-        // Настраиваем форму эмиттера (сфера)
-        ParticleSystem.ShapeModule shapeModule = particleSystem.shape;
-        shapeModule.shapeType = ParticleSystemShapeType.Sphere; // Форма сферы
-        shapeModule.radius = sphereRadius; // Радиус сферы
+    private void ConfigureShape()
+    {
+        var shapeModule = GetComponent<ParticleSystem>().shape;
+        shapeModule.shapeType = ParticleSystemShapeType.Sphere;
+        shapeModule.radius = sphereRadius;
+    }
 
-        // Настраиваем гравитацию (чтобы звёздочки падали вниз)
-        ParticleSystem.ForceOverLifetimeModule forceOverLifetime = particleSystem.forceOverLifetime;
+    private void ConfigureForces()
+    {
+        var forceOverLifetime = GetComponent<ParticleSystem>().forceOverLifetime;
         forceOverLifetime.enabled = true;
-        forceOverLifetime.y = new ParticleSystem.MinMaxCurve(-2f); // Гравитация вниз
+        forceOverLifetime.y = new ParticleSystem.MinMaxCurve(-2f);
+    }
 
-        // Настраиваем цвет частиц
-        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
+    private void ConfigureColorOverLifetime()
+    {
+        var colorOverLifetime = GetComponent<ParticleSystem>().colorOverLifetime;
         colorOverLifetime.enabled = true;
-        Gradient gradient = new Gradient();
+
+        var gradient = new Gradient();
         gradient.SetKeys(
             new GradientColorKey[] { new GradientColorKey(Color.yellow, 0f), new GradientColorKey(Color.red, 1f) },
             new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) }
         );
-        colorOverLifetime.color = gradient;
 
-        // Настраиваем уменьшение размера частиц
-        ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = particleSystem.sizeOverLifetime;
+        colorOverLifetime.color = gradient;
+    }
+
+    private void ConfigureSizeOverLifetime()
+    {
+        var sizeOverLifetime = GetComponent<ParticleSystem>().sizeOverLifetime;
         sizeOverLifetime.enabled = true;
 
-        // Создаём кривую для плавного уменьшения размера
-        AnimationCurve sizeCurve = new AnimationCurve(
-            new Keyframe(0f, 1f), // Начальный размер (100%)
-            new Keyframe(1f, 0f)  // Конечный размер (0%)
+        var sizeCurve = new AnimationCurve(
+            new Keyframe(0f, 1f),
+            new Keyframe(1f, 0f)
         );
-        sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
 
-        // Настраиваем вращение частиц по оси Y
-        ParticleSystem.RotationOverLifetimeModule rotationOverLifetime = particleSystem.rotationOverLifetime;
+        sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+    }
+
+    private void ConfigureRotationOverLifetime()
+    {
+        var rotationOverLifetime = GetComponent<ParticleSystem>().rotationOverLifetime;
         rotationOverLifetime.enabled = true;
 
-        // Создаём кривую для плавного вращения по оси Y
-        AnimationCurve rotationCurve = new AnimationCurve(
-            new Keyframe(0f, 0f), // Начальный угол (0 градусов)
-            new Keyframe(1f, rotationSpeed * mainModule.startLifetime.constant) // Конечный угол (градусы)
+        var mainModule = GetComponent<ParticleSystem>().main;
+        var rotationCurve = new AnimationCurve(
+            new Keyframe(0f, 0f),
+            new Keyframe(1f, rotationSpeed * mainModule.startLifetime.constant)
         );
-        rotationOverLifetime.y = new ParticleSystem.MinMaxCurve(1f, rotationCurve);
 
-        // Запускаем ParticleSystem
-        particleSystem.Play();
+        rotationOverLifetime.y = new ParticleSystem.MinMaxCurve(1f, rotationCurve);
     }
 }
