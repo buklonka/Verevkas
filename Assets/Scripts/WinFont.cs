@@ -62,12 +62,12 @@ public class WinTextController : MonoBehaviour
 
     private void SubscribeToEvents()
     {
-        Svyaznoy.OnAllRopesGreen += OnWin;
+        DynamicRope.OnAllRopesUncrossed += OnWin;
     }
 
     private void UnsubscribeFromEvents()
     {
-        Svyaznoy.OnAllRopesGreen -= OnWin;
+        DynamicRope.OnAllRopesUncrossed -= OnWin;
     }
 
     private void ClearSavedScore()

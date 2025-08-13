@@ -23,17 +23,24 @@ public class GameManager : MonoBehaviour
 
     void OnEnable()
     {
-        Svyaznoy.OnAllRopesGreen += OnLevelComplete;
+        DynamicRope.OnAllRopesUncrossed += OnLevelComplete;
     }
 
     void OnDisable()
     {
-        Svyaznoy.OnAllRopesGreen -= OnLevelComplete;
+        DynamicRope.OnAllRopesUncrossed -= OnLevelComplete;
     }
 
     void Start()
     {
         UpdateMoveCounterText();
+    }
+
+    void Update()
+    {
+        // This is not the most optimal place, but it will work for now.
+        // A better approach might be to only check after a rope has stopped moving.
+        DynamicRope.CheckForWinCondition();
     }
 
     private void OnLevelComplete()
@@ -55,6 +62,7 @@ public class GameManager : MonoBehaviour
 
         ProgressManager.Instance.SaveStars(LevelManager.Instance.CurrentLevelIndex, stars);
 
+        SoundManager.Instance.PlayLevelWin();
         UIManager.Instance.ShowLevelCompletePanel();
         UIManager.Instance.SetStars(stars);
     }

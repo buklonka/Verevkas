@@ -57,8 +57,14 @@ public class Uzelok : MonoBehaviour
         HandleDragging();
     }
 
-    void OnMouseEnter() { isMouseOver = true; }
-    void OnMouseExit() { isMouseOver = false; }
+    void OnMouseEnter()
+    {
+        isMouseOver = true;
+    }
+    void OnMouseExit()
+    {
+        isMouseOver = false;
+    }
 
     void OnMouseDown()
     {
