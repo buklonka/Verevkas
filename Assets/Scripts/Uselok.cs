@@ -69,6 +69,10 @@ public class Uzelok : MonoBehaviour
 
     void OnMouseUp()
     {
+        if (isDragging)
+        {
+            GameManager.Instance.IncrementMoveCount();
+        }
         StopDragging();
     }
 

@@ -3,9 +3,9 @@ using System.Collections;
 
 public class Svyaznoy : MonoBehaviour
 {
-    [SerializeField] private Uzelok connectedUzelok;
-    [SerializeField] private GameObject greenRopePrefab;
-    [SerializeField] private GameObject redRopePrefab;
+    private Uzelok connectedUzelok;
+    private GameObject greenRopePrefab;
+    private GameObject redRopePrefab;
     [SerializeField] private float ropeThickness = 0.1f;
 
     private LineRenderer lineRenderer;
@@ -13,6 +13,18 @@ public class Svyaznoy : MonoBehaviour
     private bool isInitialCheckDone = false;
 
     public static event System.Action OnAllRopesGreen;
+
+    private static System.Collections.Generic.List<Svyaznoy> allRopes = new System.Collections.Generic.List<Svyaznoy>();
+
+    void OnEnable()
+    {
+        allRopes.Add(this);
+    }
+
+    void OnDisable()
+    {
+        allRopes.Remove(this);
+    }
 
     void Start()
     {
@@ -25,8 +37,16 @@ public class Svyaznoy : MonoBehaviour
         isInitialCheckDone = true;
     }
 
+    public void Initialize(Uzelok targetUzelok)
+    {
+        connectedUzelok = targetUzelok;
+    }
+
     private void InitializeRope()
     {
+        greenRopePrefab = Resources.Load<GameObject>("Green");
+        redRopePrefab = Resources.Load<GameObject>("Red");
+
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
         {
@@ -86,8 +106,6 @@ public class Svyaznoy : MonoBehaviour
     {
         if (!isInitialCheckDone) return;
 
-        Svyaznoy[] allRopes = FindObjectsByType<Svyaznoy>(FindObjectsSortMode.None);
-
         foreach (var rope in allRopes)
         {
             if (rope.IsRed())
@@ -112,8 +130,6 @@ public class Svyaznoy : MonoBehaviour
 
     private bool CheckIntersections(Vector3 startPos, Vector3 endPos)
     {
-        Svyaznoy[] allRopes = FindObjectsByType<Svyaznoy>(FindObjectsSortMode.None);
-
         foreach (var rope in allRopes)
         {
             if (rope != this && rope.connectedUzelok != null)
