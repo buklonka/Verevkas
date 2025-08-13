@@ -60,7 +60,12 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("Level Complete! Stars earned: " + stars);
 
-        ProgressManager.Instance.SaveStars(LevelManager.Instance.CurrentLevelIndex, stars);
+        int currentLevelIndex = LevelManager.Instance.CurrentLevelIndex;
+        if (currentLevelIndex != -1) // -1 is for random levels
+        {
+            ProgressManager.Instance.SaveStars(currentLevelIndex, stars);
+            ProgressManager.Instance.UnlockLevel(currentLevelIndex + 1);
+        }
 
         SoundManager.Instance.PlayLevelWin();
         UIManager.Instance.ShowLevelCompletePanel();

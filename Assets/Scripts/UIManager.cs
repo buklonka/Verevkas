@@ -58,7 +58,6 @@ public class UIManager : MonoBehaviour
 
     private void CreateLevelButtonTemplate()
     {
-        // Programmatically create a template for the level buttons
         levelButtonTemplate = new GameObject("LevelButtonTemplate");
         levelButtonTemplate.AddComponent<RectTransform>();
         Image bgImage = levelButtonTemplate.AddComponent<Image>();
@@ -68,25 +67,55 @@ public class UIManager : MonoBehaviour
         // Add a child for the text
         GameObject textGO = new GameObject("LevelText");
         RectTransform textRect = textGO.AddComponent<RectTransform>();
-        textRect.SetParent(levelButtonTemplate.transform);
+        textRect.SetParent(levelButtonTemplate.transform, false);
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.sizeDelta = Vector2.zero;
+        TextMeshProUGUI levelText = textGO.AddComponent<TextMeshProUGUI>();
+        levelText.alignment = TextAlignmentOptions.Center;
+        levelText.fontSize = 48;
+        levelText.color = Color.white;
 
-        TextMeshProUGUI text = textGO.AddComponent<TextMeshProUGUI>();
-        text.alignment = TextAlignmentOptions.Center;
-        text.fontSize = 48;
-        text.color = Color.white;
+        // Add a child for the lock icon
+        GameObject lockGO = new GameObject("LockIcon");
+        RectTransform lockRect = lockGO.AddComponent<RectTransform>();
+        lockRect.SetParent(levelButtonTemplate.transform, false);
+        lockRect.anchorMin = new Vector2(0.5f, 0.5f);
+        lockRect.anchorMax = new Vector2(0.5f, 0.5f);
+        lockRect.sizeDelta = new Vector2(50, 50);
+        Image lockImage = lockGO.AddComponent<Image>();
+        lockImage.color = Color.white; // Assume a lock sprite is assigned elsewhere or use a placeholder color
+        lockGO.SetActive(false);
 
-        // Add the LevelButton script
-        levelButtonTemplate.AddComponent<LevelButton>();
+        // Add star icons (placeholders)
+        GameObject starsContainer = new GameObject("StarsContainer");
+        RectTransform starsRect = starsContainer.AddComponent<RectTransform>();
+        starsRect.SetParent(levelButtonTemplate.transform, false);
+        starsRect.anchorMin = new Vector2(0.5f, 0.2f);
+        starsRect.anchorMax = new Vector2(0.5f, 0.2f);
+        starsRect.sizeDelta = new Vector2(100, 20);
+        HorizontalLayoutGroup starLayout = starsContainer.AddComponent<HorizontalLayoutGroup>();
+        starLayout.spacing = 5;
+        GameObject[] starGOs = new GameObject[3];
+        for (int i = 0; i < 3; i++)
+        {
+            GameObject starGO = new GameObject("Star_" + i);
+            starGO.transform.SetParent(starsContainer.transform, false);
+            starGO.AddComponent<Image>().color = Color.yellow;
+            starGOs[i] = starGO;
+        }
 
-        levelButtonTemplate.SetActive(false); // Keep template inactive
+        // Add the LevelButton script and assign references
+        LevelButton lbScript = levelButtonTemplate.AddComponent<LevelButton>();
+        lbScript.levelText = levelText;
+        lbScript.lockIcon = lockGO;
+        lbScript.stars = starGOs;
+
+        levelButtonTemplate.SetActive(false);
     }
 
     public void PopulateLevelSelect()
     {
-        // Clear old buttons
         foreach (Transform child in levelButtonContainer)
         {
             Destroy(child.gameObject);
@@ -94,15 +123,24 @@ public class UIManager : MonoBehaviour
 
         if (LevelManager.Instance == null || LevelManager.Instance.levels == null) return;
 
+        int highestUnlockedLevel = ProgressManager.Instance.GetHighestUnlockedLevel();
+
         for (int i = 0; i < LevelManager.Instance.levels.Count; i++)
         {
             GameObject buttonGO = Instantiate(levelButtonTemplate, levelButtonContainer);
             buttonGO.name = "Level_" + (i + 1);
 
-            int stars = ProgressManager.Instance.LoadStars(i);
-
             LevelButton levelButton = buttonGO.GetComponent<LevelButton>();
-            levelButton.Initialize(i, stars);
+
+            if (i <= highestUnlockedLevel)
+            {
+                int stars = ProgressManager.Instance.LoadStars(i);
+                levelButton.Initialize(i, stars);
+            }
+            else
+            {
+                levelButton.SetLockedState();
+            }
 
             buttonGO.SetActive(true);
         }
@@ -112,10 +150,7 @@ public class UIManager : MonoBehaviour
     {
         foreach (var panel in allPanels)
         {
-            if (panel != null)
-            {
-                panel.SetActive(panel == panelToShow);
-            }
+            panel?.SetActive(panel == panelToShow);
         }
     }
 
@@ -163,7 +198,6 @@ public class UIManager : MonoBehaviour
     private void OnEndlessModeClicked()
     {
         SoundManager.Instance.PlayButtonClick();
-        // Load a random level with some default parameters (0 nails)
         LevelManager.Instance.LoadRandomLevel(8, 4, 0);
         GameManager.Instance.ResetMoveCount();
         ShowInGameHUD();
@@ -172,7 +206,6 @@ public class UIManager : MonoBehaviour
     private void OnEndlessModeHardClicked()
     {
         SoundManager.Instance.PlayButtonClick();
-        // Load a random level with more knots and some nails
         LevelManager.Instance.LoadRandomLevel(10, 5, 5);
         GameManager.Instance.ResetMoveCount();
         ShowInGameHUD();

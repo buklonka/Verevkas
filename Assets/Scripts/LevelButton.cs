@@ -4,8 +4,9 @@ using TMPro;
 
 public class LevelButton : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI levelText;
-    [SerializeField] private GameObject[] stars; // Array to hold 3 star images
+    public TextMeshProUGUI levelText;
+    public GameObject[] stars; // Array to hold 3 star images
+    public GameObject lockIcon;
 
     private int levelIndex;
     private Button button;
@@ -19,6 +20,11 @@ public class LevelButton : MonoBehaviour
     public void Initialize(int index, int starCount)
     {
         levelIndex = index;
+
+        button.interactable = true;
+        lockIcon?.SetActive(false);
+        levelText?.gameObject.SetActive(true);
+
         levelText.text = (index + 1).ToString();
 
         // Set the star display
@@ -27,6 +33,22 @@ public class LevelButton : MonoBehaviour
             if (stars[i] != null)
             {
                 stars[i].SetActive(i < starCount);
+            }
+        }
+    }
+
+    public void SetLockedState()
+    {
+        button.interactable = false;
+        lockIcon?.SetActive(true);
+        levelText?.gameObject.SetActive(false);
+
+        // Hide all stars
+        for (int i = 0; i < stars.Length; i++)
+        {
+            if (stars[i] != null)
+            {
+                stars[i].SetActive(false);
             }
         }
     }

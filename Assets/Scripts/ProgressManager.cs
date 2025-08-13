@@ -5,6 +5,7 @@ public class ProgressManager : MonoBehaviour
     public static ProgressManager Instance { get; private set; }
 
     private const string STARS_KEY_PREFIX = "LevelStars_";
+    private const string UNLOCKED_LEVEL_KEY = "HighestLevelUnlocked";
 
     void Awake()
     {
@@ -43,5 +44,21 @@ public class ProgressManager : MonoBehaviour
     {
         PlayerPrefs.DeleteAll();
         Debug.Log("All player progress has been reset.");
+    }
+
+    public void UnlockLevel(int levelIndex)
+    {
+        int highestLevel = GetHighestUnlockedLevel();
+        if (levelIndex > highestLevel)
+        {
+            PlayerPrefs.SetInt(UNLOCKED_LEVEL_KEY, levelIndex);
+            PlayerPrefs.Save();
+        }
+    }
+
+    public int GetHighestUnlockedLevel()
+    {
+        // Level 0 is always unlocked.
+        return PlayerPrefs.GetInt(UNLOCKED_LEVEL_KEY, 0);
     }
 }
